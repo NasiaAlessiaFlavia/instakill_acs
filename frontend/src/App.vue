@@ -27,7 +27,9 @@
       <section v-else class="feed">
         <form @submit.prevent="createNewPost" class="card form composer">
           <textarea v-model="composer.content" rows="3" placeholder="Share something..." required></textarea>
-          <input v-model="composer.imageUrl" placeholder="Image URL (optional)">
+          <input type="file" accept="image/*,video/*" @change="onFileChosen">
+          <small v-if="composer.imageUrl" class="media-hint">{{ composer.imageUrl }}</small>
+          <small v-if="uploadError" class="error">{{ uploadError }}</small>
           <div class="actions">
             <button type="submit">Post</button>
           </div>
@@ -92,7 +94,7 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { createPost, fetchMe, listFeed, login, register as registerUser, toggleLike, listComments, addComment } from './api'
+import { createPost, fetchMe, listFeed, login, register as registerUser, toggleLike, listComments, addComment, uploadMedia } from './api'
 
 const user = ref(null)
 const posts = ref([])
@@ -101,6 +103,7 @@ const authMode = ref('login')
 const error = ref('')
 const authForm = reactive({ username: '', email: '', password: '', usernameOrEmail: '' })
 const composer = reactive({ content: '', imageUrl: '' })
+const uploadError = ref('')
 
 // Comments state
 const comments = reactive({})
@@ -180,11 +183,24 @@ async function submitComment(postId) {
   }
 }
 
+async function onFileChosen(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  uploadError.value = ''
+  try {
+    const result = await uploadMedia(file)
+    composer.imageUrl = result.mediaUrl
+  } catch (e) {
+    uploadError.value = 'Upload failed'
+  }
+}
+
 async function createNewPost() {
   if (!composer.content.trim()) return
   await createPost({ content: composer.content, imageUrl: composer.imageUrl || null })
   composer.content = ''
   composer.imageUrl = ''
+  uploadError.value = ''
   await loadFeed()
 }
 
@@ -375,5 +391,10 @@ async function logout() {
   border: none;
   padding: 0.4rem 1.1rem;
   border-radius: 999px;
+}
+
+.media-hint {
+  color: #6b7280;
+  word-break: break-all;
 }
 </style>

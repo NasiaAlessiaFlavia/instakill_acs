@@ -35,3 +35,9 @@ export function addComment(postId, payload) {
 export function listComments(postId) {
   return client.get(`/api/posts/${postId}/comments`).then(res => res.data)
 }
+
+export function uploadMedia(file) {
+  const form = new FormData()
+  form.append('file', file)
+  return client.post('/api/media', form).then(res => res.data)
+}

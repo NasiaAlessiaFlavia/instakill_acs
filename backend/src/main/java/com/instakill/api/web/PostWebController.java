@@ -44,7 +44,7 @@ public class PostWebController {
         if (bindingResult.hasErrors()) {
             return "post_create";
         }
-        postService.createPost(principal.id(), form.getContent(), form.getImageUrl());
+        postService.createPost(principal.id(), principal.username(), form.getContent(), form.getImageUrl());
         return "redirect:/feed";
     }
 

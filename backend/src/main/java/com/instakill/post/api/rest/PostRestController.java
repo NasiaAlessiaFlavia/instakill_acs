@@ -43,7 +43,7 @@ public class PostRestController {
     @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     public PostResponse createPost(@AuthenticationPrincipal JwtUserPrincipal principal,
                                    @Valid @RequestBody CreatePostRequest request) {
-        Post post = postService.createPost(principal.id(), request.content(), request.imageUrl());
+        Post post = postService.createPost(principal.id(), principal.username(), request.content(), request.imageUrl());
         return PostMapper.toResponse(post, userService.getById(post.authorId()), false);
     }
 

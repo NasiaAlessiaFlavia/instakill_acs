@@ -47,15 +47,15 @@ public class DataInitializer implements ApplicationRunner {
         User bob = authService.register("bob", "bob@example.com", "password").user();
 
         List<Post> alicePosts = List.of(
-                postService.createPost(alice.id(), "Hello Instakill!", null),
-                postService.createPost(alice.id(), "Sunset vibes", "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee"),
-                postService.createPost(alice.id(), "Weekend adventures", null)
+                postService.createPost(alice.id(), alice.username(), "Hello Instakill!", null),
+                postService.createPost(alice.id(), alice.username(), "Sunset vibes", "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee"),
+                postService.createPost(alice.id(), alice.username(), "Weekend adventures", null)
         );
 
         List<Post> bobPosts = List.of(
-                postService.createPost(bob.id(), "Coffee first", "https://images.unsplash.com/photo-1447933601403-0c6688de566e"),
-                postService.createPost(bob.id(), "Design inspo", null),
-                postService.createPost(bob.id(), "Working on side projects", null)
+                postService.createPost(bob.id(), bob.username(), "Coffee first", "https://images.unsplash.com/photo-1447933601403-0c6688de566e"),
+                postService.createPost(bob.id(), bob.username(), "Design inspo", null),
+                postService.createPost(bob.id(), bob.username(), "Working on side projects", null)
         );
 
         interactionService.addComment(alicePosts.getFirst().id(), bob.id(), "Welcome Alice!");

@@ -32,6 +32,8 @@ instakill:
     secret: change-me-change-me-change-me-change-me-change-me-secret-key-1234
     issuer: instakill
     ttl-minutes: 120
+  notifications:
+    ntfy-topic: instakill-posts
 logging:
   level:
     org.hibernate.SQL: warn

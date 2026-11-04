@@ -6,6 +6,7 @@ import com.instakill.common.error.NotFoundException;
 import com.instakill.common.id.IdGenerator;
 import com.instakill.feed.application.FeedService;
 import com.instakill.feed.domain.FeedSort;
+import com.instakill.infrastructure.notification.NotificationService;
 import com.instakill.post.domain.Post;
 import com.instakill.post.domain.PostRepository;
 import org.springframework.stereotype.Service;
@@ -23,16 +24,19 @@ public class PostService {
     private final IdGenerator idGenerator;
     private final Clock clock;
     private final FeedService feedService;
+    private final NotificationService notificationService;
 
-    public PostService(PostRepository posts, IdGenerator idGenerator, Clock clock, FeedService feedService) {
+    public PostService(PostRepository posts, IdGenerator idGenerator, Clock clock,
+                       FeedService feedService, NotificationService notificationService) {
         this.posts = posts;
         this.idGenerator = idGenerator;
         this.clock = clock;
         this.feedService = feedService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
-    public Post createPost(UUID authorId, String content, String imageUrl) {
+    public Post createPost(UUID authorId, String authorUsername, String content, String imageUrl) {
         Instant now = clock.now();
         Post post = new Post(
                 idGenerator.generate(),
@@ -44,7 +48,9 @@ public class PostService {
                 0L,
                 0L
         );
-        return posts.save(post);
+        Post saved = posts.save(post);
+        notificationService.notifyPostCreated(saved, authorUsername);
+        return saved;
     }
 
     public Post getPost(UUID id) {

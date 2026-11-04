@@ -1,5 +1,6 @@
 package com.instakill.api.rest;
 
+import com.instakill.media.ImageProcessingService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +22,12 @@ import java.util.UUID;
 public class MediaController {
 
     private final Path mediaDir;
+    private final ImageProcessingService imageProcessingService;
 
-    public MediaController(@Value("${media.base-path}") String mediaBasePath) throws IOException {
+    public MediaController(@Value("${media.base-path}") String mediaBasePath,
+                           ImageProcessingService imageProcessingService) throws IOException {
         this.mediaDir = Paths.get(mediaBasePath).toAbsolutePath().normalize();
+        this.imageProcessingService = imageProcessingService;
         Files.createDirectories(this.mediaDir);
     }
 
@@ -34,7 +38,15 @@ public class MediaController {
                 ? original.substring(original.lastIndexOf('.'))
                 : "";
         String filename = UUID.randomUUID() + extension;
-        file.transferTo(mediaDir.resolve(filename));
+        Path target = mediaDir.resolve(filename);
+
+        if (imageProcessingService.isImage(extension)) {
+            byte[] processed = imageProcessingService.process(file.getInputStream(), extension);
+            Files.write(target, processed);
+        } else {
+            file.transferTo(target);
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("mediaUrl", "/media/" + filename));
     }
 }

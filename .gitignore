@@ -8,6 +8,7 @@ frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 var/
+.claude/
 *.db
 *.sqlite
 .DS_Store
@@ -15,10 +16,10 @@ Thumbs.db
 gradlew
 gradlew.bat
 gradle/wrapper/
-.gradle/
 **/gradlew
 **/gradlew.bat
 **/gradle/wrapper/**
 **/.gradle/
 .temp/
 CUM_SA_PORNESTI.txt
+.vscode/

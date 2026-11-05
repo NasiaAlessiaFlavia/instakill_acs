@@ -15,6 +15,7 @@ public final class PostMapper {
         entity.setAuthorId(post.authorId());
         entity.setContent(post.content());
         entity.setImageUrl(post.imageUrl());
+        entity.setMediaType(inferMediaType(post.imageUrl()));
         entity.setCreatedAt(post.createdAt());
         entity.setUpdatedAt(post.updatedAt());
         entity.setLikeCount(post.likeCount());
@@ -33,6 +34,14 @@ public final class PostMapper {
                 entity.getLikeCount(),
                 entity.getCommentCount()
         );
+    }
+
+    private static String inferMediaType(String imageUrl) {
+        if (imageUrl == null) return null;
+        String lower = imageUrl.toLowerCase();
+        if (lower.matches(".*\\.(mp4|mov|avi|webm|mkv)(\\?.*)?$")) return "video";
+        if (lower.matches(".*\\.(jpg|jpeg|png|gif|webp|bmp)(\\?.*)?$")) return "photo";
+        return null;
     }
 
     public static PostResponse toResponse(Post post, User author, boolean likedByCurrentUser) {

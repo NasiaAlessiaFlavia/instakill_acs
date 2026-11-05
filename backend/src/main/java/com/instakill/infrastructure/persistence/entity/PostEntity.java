@@ -32,6 +32,9 @@ public class PostEntity {
     @Column(length = 2048)
     private String imageUrl;
 
+    @Column(name = "media_type", length = 10)
+    private String mediaType;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -74,6 +77,14 @@ public class PostEntity {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getMediaType() {
+        return mediaType;
+    }
+
+    public void setMediaType(String mediaType) {
+        this.mediaType = mediaType;
     }
 
     public Instant getCreatedAt() {

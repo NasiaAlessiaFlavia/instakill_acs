@@ -2,6 +2,7 @@ package com.instakill.analytics;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,13 @@ public class AnalyticsService {
 
     @PersistenceContext
     private EntityManager em;
+
+    @Value("${spring.datasource.driver-class-name:org.sqlite.JDBC}")
+    private String driverClassName;
+
+    private boolean isPostgres() {
+        return driverClassName.contains("postgresql");
+    }
 
     public AnalyticsResponse getAnalytics(UUID userId) {
         String uid = userId.toString();
@@ -28,16 +36,18 @@ public class AnalyticsService {
 
     @SuppressWarnings("unchecked")
     private List<AnalyticsResponse.WeeklyStats> fetchWeeklyStats(String userId) {
-        List<Object[]> rows = em.createNativeQuery("""
-                SELECT strftime('%Y-W%W', datetime(created_at/1000, 'unixepoch')) AS week,
-                       COUNT(*)                        AS posts,
-                       SUM(like_count)                 AS likes,
-                       SUM(comment_count)              AS comments
-                FROM posts
-                WHERE author_id = :userId
-                GROUP BY strftime('%Y-W%W', datetime(created_at/1000, 'unixepoch'))
-                ORDER BY week DESC
-                """)
+        String weekExpr = isPostgres()
+                ? "TO_CHAR(created_at, 'IYYY-\"W\"IW')"
+                : "strftime('%Y-W%W', datetime(created_at/1000, 'unixepoch'))";
+        List<Object[]> rows = em.createNativeQuery(
+                "SELECT " + weekExpr + " AS week," +
+                "       COUNT(*)           AS posts," +
+                "       SUM(like_count)    AS likes," +
+                "       SUM(comment_count) AS comments" +
+                " FROM posts" +
+                " WHERE author_id = :userId" +
+                " GROUP BY " + weekExpr +
+                " ORDER BY week DESC")
                 .setParameter("userId", userId)
                 .getResultList();
 
@@ -75,11 +85,10 @@ public class AnalyticsService {
     }
 
     private Double fetchLikeToCommentRatio(String userId) {
-        Object result = em.createNativeQuery("""
-                SELECT CAST(SUM(like_count) AS REAL) / NULLIF(SUM(comment_count), 0)
-                FROM posts
-                WHERE author_id = :userId
-                """)
+        String castExpr = isPostgres() ? "FLOAT" : "REAL";
+        Object result = em.createNativeQuery(
+                "SELECT CAST(SUM(like_count) AS " + castExpr + ") / NULLIF(SUM(comment_count), 0)" +
+                " FROM posts WHERE author_id = :userId")
                 .setParameter("userId", userId)
                 .getSingleResult();
         return result == null ? null : ((Number) result).doubleValue();
@@ -123,13 +132,12 @@ public class AnalyticsService {
                 SELECT CASE
                     WHEN (SELECT avg_eng FROM my_avg) IS NULL THEN NULL
                     WHEN (SELECT COUNT(*) FROM user_avg) = 0  THEN NULL
-                    ELSE ROUND(
+                    ELSE ROUND(CAST(
                         (1.0 - CAST(
                             (SELECT COUNT(*) FROM user_avg
                              WHERE avg_eng < (SELECT avg_eng FROM my_avg))
-                        AS REAL) / (SELECT COUNT(*) FROM user_avg)
-                        ) * 100, 1
-                    )
+                        AS FLOAT) / (SELECT COUNT(*) FROM user_avg)
+                        ) * 100 AS NUMERIC), 1)
                 END
                 """)
                 .setParameter("userId", userId)

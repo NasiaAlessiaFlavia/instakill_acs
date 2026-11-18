@@ -1,5 +1,6 @@
 <template>
   <div class="app-shell">
+    <div v-if="toast" class="toast">{{ toast }}</div>
     <header class="app-header">
       <h1>Instakill</h1>
       <nav v-if="user">
@@ -110,7 +111,20 @@
           <small v-if="uploadError" class="error">{{ uploadError }}</small>
           <div class="actions">
             <button type="submit">Post</button>
+            <button type="button"
+                    class="funny-btn"
+                    :disabled="funnyLoading || !composer.content.trim()"
+                    @click="makeFunnier">
+              {{ funnyLoading ? '✨ Thinking...' : '😂 Make It Funnier' }}
+            </button>
+            <button type="button"
+                    v-if="previousContent"
+                    class="undo-btn"
+                    @click="composer.content = previousContent; previousContent = ''">
+              ↩ Undo
+            </button>
           </div>
+          <small v-if="funnyError" class="error">{{ funnyError }}</small>
         </form>
 
         <div class="feed-toolbar">
@@ -172,7 +186,7 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { createPost, fetchMe, listFeed, login, register as registerUser, toggleLike, listComments, addComment, uploadMedia, fetchAnalytics } from './api'
+import { createPost, fetchMe, listFeed, login, register as registerUser, toggleLike, listComments, addComment, uploadMedia, fetchAnalytics, funnyfy } from './api'
 
 const user = ref(null)
 const posts = ref([])
@@ -188,6 +202,12 @@ const comments = reactive({})
 const newComment = reactive({})
 const commentLoading = reactive({})
 const commentError = reactive({})
+
+// Funnyfy state
+const funnyLoading = ref(false)
+const funnyError = ref('')
+const toast = ref('')
+const previousContent = ref('')
 
 // Analytics state
 const showAnalytics = ref(false)
@@ -274,6 +294,23 @@ async function onFileChosen(event) {
     composer.imageUrl = result.mediaUrl
   } catch (e) {
     uploadError.value = 'Upload failed'
+  }
+}
+
+async function makeFunnier() {
+  if (!composer.content.trim()) return
+  funnyLoading.value = true
+  funnyError.value = ''
+  try {
+    previousContent.value = composer.content
+    const result = await funnyfy(composer.content)
+    composer.content = result.funnyText
+    toast.value = 'Your post just got funnier 🎉'
+    setTimeout(() => { toast.value = '' }, 3000)
+  } catch (e) {
+    funnyError.value = 'Could not reach the AI. Is LM Studio running?'
+  } finally {
+    funnyLoading.value = false
   }
 }
 
@@ -610,5 +647,44 @@ async function logout() {
 .no-data {
   color: #9ca3af;
   font-size: 0.85rem;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+/* ── Funnyfy ── */
+.funny-btn {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.funny-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.undo-btn {
+  background: #e5e7eb;
+  color: #374151;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  cursor: pointer;
 }
 </style>

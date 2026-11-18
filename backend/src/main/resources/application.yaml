@@ -34,6 +34,8 @@ instakill:
     ttl-minutes: 120
   notifications:
     ntfy-topic: instakill-posts
+  llm:
+    url: ${LOCAL_LLM_URL:http://localhost:12345}
 logging:
   level:
     org.hibernate.SQL: warn
